@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 关键：禁止缩放，适配 iPhone 14 Pro 灵动岛和全面屏 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI Model Picker | iOS Style</title>
+    <style>
+        :root {
+            /* iOS 灰粉紫配色系统 */
+            --bg-color: #f4f1f4;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --text-main: #2c2c2e;
+            --text-sub: #8e8e93;
+            --accent-purple: #af52de;
+            --accent-pink: #ff2d55;
+            --input-bg: rgba(120, 120, 128, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100dvh; /* 动态视口高度，完美适配 iPhone 14 Pro */
+            width: 100vw;
+            overflow: hidden; /* 强制一屏，禁止滚动 */
+            display: flex;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+        }
+
+        /* 极简头部 */
+        header {
+            padding: 15px 0 10px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+
+        /* 液态玻璃卡片 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 0; /* 防止 Flex 溢出 */
+        }
+
+        /* 紧凑的输入网格 */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-left: 4px;
+        }
+
+        input {
+            background: var(--input-bg);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            text-align: center;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            background: rgba(175, 82, 222, 0.1);
+            box-shadow: 0 0 0 3px rgba(175, 82, 222, 0.2);
+        }
+
+        /* iOS 风格按钮 */
+        .btn {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(175, 82, 222, 0.3);
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        /* 结果区域 */
+        .results {
+            margin-top: 15px;
+            display: none; /* 默认隐藏，JS 控制显示 */
+            animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .model-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .model-tag {
+            font-size: 0.65rem;
+            color: var(--accent-purple);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .model-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .match-score {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .analysis {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+            padding: 0 4px;
+            margin-top: 5px;
+        }
+
+        /* 适配小屏 iPhone (SE/Mini) */
+        @media (max-height: 700px) {
+            .glass-card { padding: 12px; }
+            .input-grid { gap: 8px; }
+            input { padding: 10px; font-size: 1rem; }
+            .btn { padding: 12px; font-size: 0.9rem; }
+            h1 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>AI Model Picker</h1>
+        <div class="subtitle">Liquid Glass · iOS Style</div>
+    </header>
+
+    <div class="glass-card">
+        <div class="input-grid">
+            <div class="input-group">
+                <label>理性 R</label>
+                <input type="number" id="rational" inputmode="numeric" value="70">
+            </div>
+            <div class="input-group">
+                <label>温柔 T</label>
+                <input type="number" id="gentle" inputmode="numeric" value="60">
+            </div>
+            <div class="input-group">
+                <label>严厉 S</label>
+                <input type="number" id="strict" inputmode="numeric" value="40">
+            </div>
+            <div class="input-group">
+                <label>欲望 D</label>
+                <input type="number" id="desire" inputmode="numeric" value="50">
+            </div>
+        </div>
+
+        <button class="btn" id="calcBtn">计算最佳匹配</button>
+
+        <div class="results" id="resultArea">
+            <div class="result-card">
+                <div class="model-info">
+                    <span class="model-tag">主推模型</span>
+                    <span class="model-name" id="primaryName">GPT</span>
+                </div>
+                <div class="match-score" id="primaryScore">92%</div>
+            </div>
+            <div class="result-card" style="opacity: 0.8;">
+                <div class="model-info">
+                    <span class="model-tag">副推模型</span>
+                    <span class="model-name" id="secondaryName">Gemini</span>
+                </div>
+                <div class="match-score" id="secondaryScore">85%</div>
+            </div>
+            <div class="analysis" id="analysisText">分析中...</div>
+        </div>
+    </div>
+
+    <script>
+        // 模型基准数据
+        const MODELS = {
+            GPT:    { r: 95, t: 90, s: 30, d: 30 },
+            Gemini: { r: 70, t: 85, s: 40, d: 75 },
+            Grok:   { r: 50, t: 20, s: 85, d: 90 },
+            Claude: { r: 90, t: 40, s: 95, d: 20 }
+        };
+
+        const calcBtn = document.getElementById('calcBtn');
+        const resultArea = document.getElementById('resultArea');
+
+        calcBtn.addEventListener('click', () => {
+            const getVal = (id) => parseInt(document.getElementById(id).value) || 0;
+            const user = {
+                r: getVal('rational'),
+                t: getVal('gentle'),
+                s: getVal('strict'),
+                d: getVal('desire')
+            };
+
+            // 计算差异
+            const scores = Object.entries(MODELS).map(([name, base]) => {
+                const diff = Math.abs(user.r - base.r) + Math.abs(user.t - base.t) + 
+                             Math.abs(user.s - base.s) + Math.abs(user.d - base.d);
+                return { name, diff, score: Math.max(0, 100 - (diff / 4)) };
+            });
+
+            scores.sort((a, b) => b.score - a.score);
+            const [primary, secondary] = scores;
+
+            // 更新 UI
+            document.getElementById('primaryName').textContent = primary.name;
+            document.getElementById('primaryScore').textContent = `${Math.round(primary.score)}%`;
+            document.getElementById('secondaryName').textContent = secondary.name;
+            document.getElementById('secondaryScore').textContent = `${Math.round(secondary.score)}%`;
+            
+            document.getElementById('analysisText').textContent = 
+                `基于您的偏好，${primary.name} 在理性与温柔的平衡上最契合；${secondary.name} 可作为备选方案。`;
+
+            resultArea.style.display = 'block';
+        });
+
+        // 自动收起键盘
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                document.activeElement.blur();
+            }
+        });
+    </script>
+</body>
+</html>
